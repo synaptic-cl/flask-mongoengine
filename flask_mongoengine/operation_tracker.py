@@ -11,6 +11,8 @@ import pymongo.collection
 import pymongo.cursor
 import pymongo.helpers
 
+from flask import g
+
 from bson import SON
 
 
@@ -26,11 +28,15 @@ _original_methods = {
     '_unpack_response': pymongo.helpers._unpack_response,
 }
 
-queries = []
-inserts = []
-updates = []
-removes = []
-response_sizes = []
+def tracker_array(attr):
+    # This shouldn't be necessary but is just an additional safety measure in
+    # in case we don't initialize g.mongoengine_operation_tracker but the
+    # methods are monkey patched. In case something goes wrong, just return an
+    # empty list that will be discarded.
+    try:
+        return g.mongoengine_operation_tracker[attr]
+    except:
+        return []
 
 # Wrap helpers._unpack_response for getting response size
 @functools.wraps(_original_methods['_unpack_response'])
@@ -41,7 +47,7 @@ def _unpack_response(response, *args, **kwargs):
         *args,
         **kwargs
     )
-    response_sizes.append(sys.getsizeof(response) / 1024.0)
+    tracker_array('response_sizes').append(sys.getsizeof(response) / 1024.0)
     return result
 
 # Wrap Cursor.insert for getting queries
@@ -60,12 +66,12 @@ def _insert(collection_self, doc_or_docs, manipulate=True,
 
     __traceback_hide__ = True
     stack_trace, internal = _tidy_stacktrace()
-    inserts.append({
+    tracker_array('inserts').append({
         'document': doc_or_docs,
         'safe': safe,
         'time': total_time,
         'stack_trace': stack_trace,
-        'size': response_sizes[-1] if response_sizes else 0,
+        'size': tracker_array('response_sizes')[-1] if tracker_array('response_sizes') else 0,
         'internal': internal
     })
     return result
@@ -88,7 +94,7 @@ def _update(collection_self, spec, document, upsert=False,
 
     __traceback_hide__ = True
     stack_trace, internal = _tidy_stacktrace()
-    updates.append({
+    tracker_array('updates').append({
         'document': document,
         'upsert': upsert,
         'multi': multi,
@@ -96,7 +102,7 @@ def _update(collection_self, spec, document, upsert=False,
         'safe': safe,
         'time': total_time,
         'stack_trace': stack_trace,
-        'size': response_sizes[-1] if response_sizes else 0,
+        'size': tracker_array('response_sizes')[-1] if tracker_array('response_sizes') else 0,
         'internal': internal
     })
     return result
@@ -115,12 +121,12 @@ def _remove(collection_self, spec_or_id, safe=False, **kwargs):
 
     __traceback_hide__ = True
     stack_trace, internal = _tidy_stacktrace()
-    removes.append({
+    tracker_array('removes').append({
         'spec_or_id': spec_or_id,
         'safe': safe,
         'time': total_time,
-        '   ': stack_trace,
-        'size': response_sizes[-1] if response_sizes else 0,
+        'stack_trace': stack_trace,
+        'size': tracker_array('response_sizes')[-1] if tracker_array('response_sizes') else 0,
         'internal': internal
     })
     return result
@@ -176,7 +182,7 @@ def _cursor_refresh(cursor_self):
         'time': total_time,
         'operation': 'query',
         'stack_trace': stack_trace,
-        'size': response_sizes[-1] if response_sizes else 0,
+        'size': tracker_array('response_sizes')[-1] if tracker_array('response_sizes') else 0,
         'data': copy.copy(privar('data')),
         'internal': internal
     }
@@ -202,7 +208,7 @@ def _cursor_refresh(cursor_self):
         query_data['query'] = query_son['$query']
         query_data['ordering'] = _get_ordering(query_son)
 
-    queries.append(query_data)
+    tracker_array('queries').append(query_data)
 
     return result
 
@@ -221,12 +227,13 @@ def uninstall_tracker():
     pymongo.helpers._unpack_response = _original_methods['_unpack_response']
 
 def reset():
-    global queries, inserts, updates, removes, response_sizes
-    queries = []
-    inserts = []
-    updates = []
-    removes = []
-    response_sizes = []
+    g.mongoengine_operation_tracker = {
+        'queries': [],
+        'inserts': [],
+        'updates': [],
+        'removes': [],
+        'response_sizes': [],
+    }
 
 def _get_ordering(son):
     """Helper function to extract formatted ordering from dict.

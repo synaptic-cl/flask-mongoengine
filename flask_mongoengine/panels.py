@@ -1,4 +1,4 @@
-from flask import current_app
+from flask import current_app, g
 
 from flask_debugtoolbar.panels import DebugPanel
 from jinja2 import PackageLoader, ChoiceLoader
@@ -41,10 +41,10 @@ class MongoDebugPanel(DebugPanel):
 
     def nav_subtitle(self):
         attrs = ['queries', 'inserts', 'updates', 'removes']
-        ops = sum(sum((1 for o in getattr(operation_tracker, a)
+        ops = sum(sum((1 for o in g.mongoengine_operation_tracker[a]
                          if not o['internal']))
                          for a in attrs)
-        total_time = sum(sum(o['time'] for o in getattr(operation_tracker, a))
+        total_time = sum(sum(o['time'] for o in g.mongoengine_operation_tracker[a])
                          for a in attrs)
         return '{0} operations in {1:.2f}ms'.format(ops, total_time)
 
@@ -56,9 +56,6 @@ class MongoDebugPanel(DebugPanel):
 
     def content(self):
         context = self.context.copy()
-        context['queries'] = operation_tracker.queries
-        context['inserts'] = operation_tracker.inserts
-        context['updates'] = operation_tracker.updates
-        context['removes'] = operation_tracker.removes
+        context.update(g.mongoengine_operation_tracker)
         context['slow_query_limit'] = current_app.config.get('MONGO_DEBUG_PANEL_SLOW_QUERY_LIMIT', 100)
         return self.render('panels/mongo-panel.html', context)
