@@ -38,6 +38,12 @@ def tracker_array(attr):
     except:
         return []
 
+def is_quick():
+    try:
+        return g.mongoengine_operation_tracker_quick
+    except: # Undefined, no context, cosmic rays etc.
+        return False
+
 # Wrap helpers._unpack_response for getting response size
 @functools.wraps(_original_methods['_unpack_response'])
 def _unpack_response(response, *args, **kwargs):
@@ -64,8 +70,12 @@ def _insert(collection_self, doc_or_docs, manipulate=True,
     )
     total_time = (time.time() - start_time) * 1000
 
-    __traceback_hide__ = True
-    stack_trace, internal = _tidy_stacktrace()
+    if is_quick():
+        stack_trace, internal = [], False
+    else:
+        __traceback_hide__ = True
+        stack_trace, internal = _tidy_stacktrace()
+
     tracker_array('inserts').append({
         'document': doc_or_docs,
         'safe': safe,
@@ -92,8 +102,12 @@ def _update(collection_self, spec, document, upsert=False,
     )
     total_time = (time.time() - start_time) * 1000
 
-    __traceback_hide__ = True
-    stack_trace, internal = _tidy_stacktrace()
+    if is_quick():
+        stack_trace, internal = [], False
+    else:
+        __traceback_hide__ = True
+        stack_trace, internal = _tidy_stacktrace()
+
     tracker_array('updates').append({
         'document': document,
         'upsert': upsert,
@@ -176,14 +190,20 @@ def _cursor_refresh(cursor_self):
         if maxScan:
             query_son["$maxScan"] = maxScan
 
-    __traceback_hide__ = True
-    stack_trace, internal = _tidy_stacktrace()
+    if is_quick():
+        stack_trace, internal = [], False
+        data = None
+    else:
+        __traceback_hide__ = True
+        stack_trace, internal = _tidy_stacktrace()
+        data = copy.copy(privar('data')),
+
     query_data = {
         'time': total_time,
         'operation': 'query',
         'stack_trace': stack_trace,
         'size': tracker_array('response_sizes')[-1] if tracker_array('response_sizes') else 0,
-        'data': copy.copy(privar('data')),
+        'data': data,
         'internal': internal
     }
 
