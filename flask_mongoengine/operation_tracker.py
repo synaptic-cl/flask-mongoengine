@@ -2,6 +2,7 @@ import functools
 import time
 import inspect
 import copy
+import re
 import sys
 import os
 import SocketServer
@@ -221,6 +222,20 @@ def _cursor_refresh(cursor_self):
             query_data['skip'] = query_son.get('skip')
             query_data['limit'] = query_son.get('limit')
             query_data['query'] = query_son['query']
+        elif 'mapreduce' in query_son:
+            query_data['collection'] = query_son['mapreduce']
+            query_data['operation'] = 'mreduce'
+            query_data['query'] = query_son['query']
+            query_data['data'] = {
+                'map': re.sub('[\n\ ]+', ' ', str(query_son['map'])),
+                'reduce': re.sub('[\n\ ]+', ' ', str(query_son['reduce'])),
+                'finalize': re.sub('[\n\ ]+', ' ', str(query_son.get('finalize')))
+            }
+        elif 'distinct' in query_son:
+            query_data['collection'] = query_son['distinct']
+            query_data['operation'] = 'distinct'
+            query_data['query'] = query_son['query']
+            query_data['data'] = {'key': query_son['key']}
     else:
         # Normal Query
         query_data['skip'] = privar('skip')

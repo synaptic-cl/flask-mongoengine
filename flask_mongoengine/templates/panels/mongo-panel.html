@@ -79,36 +79,36 @@
                     <td>{% if query.limit %}{{ query.limit }}{% endif %}</td>
                     <td><a href="javascript:void(0);" class="mongo-toggle-data" data-row="mongo-data-{{ loop.index }}">Toggle</a></td>
                 {% elif title == "Inserts" %}
-                {% set colspan = 5 %}
-                <td class="code fifty"></pre>{{ query.document|safe }}</pre>
-                </td>
-                <td>{{ query.safe }}</td>
+                    {% set colspan = 5 %}
+                    <td class="code fifty"></pre>{{ query.document|safe }}</pre>
+                    </td>
+                    <td>{{ query.safe }}</td>
                 {% elif title == 'Removes' %}
-                {% set colspan = 5 %}
-                <td class="code thirty">
-                    <pre>{{ query.spec_or_id|safe }}</pre>
-                </td>
-                <td class="code thirty"><pre>{{ query.safe }}</pre></td>
+                    {% set colspan = 5 %}
+                    <td class="code thirty">
+                        <pre>{{ query.spec_or_id|safe }}</pre>
+                    </td>
+                    <td class="code thirty"><pre>{{ query.safe }}</pre></td>
                 {% elif title == 'Updates' %}
-                {% set colspan = 8 %}
-                <td class="code thirty">
-                    <pre>{{ query.spec|safe }}</pre>
-                </td>
-                <td class="code thirty">
-                    <pre>{{ query.document|safe }}</pre>
-                </td>
-                <td>{{ query.safe }}</td>
-                <td>{{ query.multi }}</td>
-                <td>{{ query.upsert }}</td>
+                    {% set colspan = 8 %}
+                    <td class="code thirty">
+                        <pre>{{ query.spec|safe }}</pre>
+                    </td>
+                    <td class="code thirty">
+                        <pre>{{ query.document|safe }}</pre>
+                    </td>
+                    <td>{{ query.safe }}</td>
+                    <td>{{ query.multi }}</td>
+                    <td>{{ query.upsert }}</td>
                 {% endif %}
                 <td><a href="javascript:void(0);" class="mongo-toggle-trace" data-row="mongo-{{ title|lower }}-{{ loop.index }}">Toggle</a></td>
             </tr>
             {% if title == "Queries" %}
-            <tr class="{{ loop.cycle('flDebugOdd', 'flDebugEven') }} mongo-data" id="mongo-data-{{ loop.index }}">
-                <td colspan="{{ colspan }}">
-                    <code><pre>{{ query.data|pprint }}</pre></code>
-                </td>
-            </tr>
+                <tr class="{{ loop.cycle('flDebugOdd', 'flDebugEven') }} mongo-data" id="mongo-data-{{ loop.index }}">
+                    <td colspan="{{ colspan }}">
+                        <code><pre>{{ query.data|pprint }}</pre></code>
+                    </td>
+                </tr>
             {% endif %}
             <tr class="{{ loop.cycle('flDebugOdd','flDebugEven') }} mongo-stack-trace" id="mongo-{{  title|lower }}-{{ loop.index }}">
                 <td colspan="{{ colspan}} ">
