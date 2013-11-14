@@ -228,8 +228,10 @@ def _cursor_refresh(cursor_self):
             query_data['query'] = query_son['query']
             query_data['data'] = {
                 'map': re.sub('[\n\ ]+', ' ', str(query_son['map'])),
+                'map_scope': query_son['map'].scope,
                 'reduce': re.sub('[\n\ ]+', ' ', str(query_son['reduce'])),
-                'finalize': re.sub('[\n\ ]+', ' ', str(query_son.get('finalize')))
+                'finalize': re.sub('[\n\ ]+', ' ', str(query_son.get('finalize'))),
+                'field': query_son.get('field'),
             }
         elif 'distinct' in query_son:
             query_data['collection'] = query_son['distinct']
