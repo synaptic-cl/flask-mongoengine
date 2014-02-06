@@ -238,6 +238,10 @@ def _cursor_refresh(cursor_self):
             query_data['operation'] = 'distinct'
             query_data['query'] = query_son['query']
             query_data['data'] = {'key': query_son['key']}
+        elif 'aggregate' in query_son:
+            query_data['collection'] = query_son['aggregate']
+            query_data['operation'] = 'aggregate'
+            query_data['query'] = query_son['pipeline']
     else:
         # Normal Query
         query_data['skip'] = privar('skip')
